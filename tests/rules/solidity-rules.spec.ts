@@ -105,6 +105,51 @@ contract SecureBank is ReentrancyGuard {
     });
   });
 
+  describe('sol-013: Unsafe Timestamp Dependency', () => {
+    it('should detect unsafe reliance on block.timestamp and now in critical logic', async () => {
+      const code = `
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract TimeSensitive {
+    uint256 public deadline;
+
+    function bid() external {
+        require(block.timestamp <= deadline, "Auction expired");
+        // bidding logic
+    }
+
+    function recordStart() external {
+        uint256 startTime = now;
+        // start logic
+    }
+}
+`;
+
+      const result = await analyzer.analyze(code, 'time-sensitive.sol');
+      RuleAssertions.assertHasFinding(result.findings, 'sol-013');
+      RuleAssertions.assertFindingSeverity(result.findings, 'sol-013', 'high');
+    });
+
+    it('should not flag block.timestamp when used only for event emission', async () => {
+      const code = `
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract LogTimestamp {
+    event Timestamped(uint256 timestamp);
+
+    function log() external {
+        emit Timestamped(block.timestamp);
+    }
+}
+`;
+
+      const result = await analyzer.analyze(code, 'timestamp-log.sol');
+      RuleAssertions.assertNotHasFinding(result.findings, 'sol-013');
+    });
+  });
+
   describe('Rule Assertions', () => {
     it('should provide helpful assertion messages', async () => {
       const code = `
