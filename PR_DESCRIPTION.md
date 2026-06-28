@@ -1,38 +1,29 @@
 ## Summary
 
-This pull request introduces a new security rule to detect potentially unsafe operations in Soroban contracts. The rule flags a variety of patterns that can lead to security vulnerabilities and unexpected behavior, providing developers with actionable recommendations to improve the safety and reliability of their contracts.
+This pull request introduces a new optimization rule to detect and flag unnecessary storage writes in a contract's constructor. Redundant assignments to state variables during construction lead to wasted gas on deployment. This rule helps developers identify and eliminate these inefficiencies.
 
 ## What Changed
 
-- Implemented a new security rule, `detect-unsafe-operations`, to identify unsafe patterns in Soroban contracts.
-- The rule detects the following unsafe operations:
-  - `unsafe` blocks
-  - `unsafe fn`
-  - `.unwrap()` calls
-  - `panic!` macros
-  - `unreachable!` macros
-  - `std::mem::transmute`
-  - Raw pointer usage
-  - Unchecked arithmetic operators
-- For each detected violation, the rule provides a detailed description of the issue and a recommendation for how to fix it.
+- **Added Rule:** Implemented `detect-unnecessary-constructor-storage-writes.ts` to identify when a state variable is assigned a value more than once within the constructor.
+- **Added Tests:** Created corresponding unit tests with mock contracts (`UnnecessaryWritesContract.sol` and `NoUnnecessaryWritesContract.sol`) to validate the rule's accuracy and prevent false positives.
 
 ## Why
 
-The use of unsafe operations in Soroban contracts can introduce serious security vulnerabilities, such as memory corruption, integer overflows, and unexpected panics. By detecting these patterns and providing clear guidance on how to avoid them, this new rule helps developers write more secure and robust contracts.
+Unnecessary storage writes during deployment are an anti-pattern that increases gas costs without providing any functional benefit. This rule helps developers write more efficient and cost-effective contracts by flagging these redundant assignments.
 
 ## Testing Performed
 
-- [x] Lint
-- [x] Tests
-- [x] Build
+- [x] Wrote unit tests for the new rule.
+- [x] Manually verified the rule against several contracts.
 
 ## Edge Cases Considered
 
-- The rule correctly handles a variety of code formatting and style variations.
-- The rule avoids false positives by ignoring non-arithmetic uses of `+`, `-`, and `*` operators.
+- Contracts with no constructor.
+- Constructors with no storage writes.
+- Constructors with multiple, non-redundant storage writes to different variables.
 
 ## Risks
 
-None. The new rule is purely additive and does not introduce any breaking changes.
+None. This is a non-breaking, additive change that only introduces a new check.
 
-Closes #496
+Closes #356
